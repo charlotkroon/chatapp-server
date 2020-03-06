@@ -1,5 +1,6 @@
 const express = require("express");
-const Sse = require("json-sse"); //stream maker
+const Sse = require("json-sse");
+const cors = require("cors");
 
 const app = express();
 
@@ -9,13 +10,25 @@ const db = {};
 
 db.messages = [];
 
+const corsMiddleware = cors();
+app.use(corsMiddleware);
+// app.use(cors())
+
 const parser = express.json();
 app.use(parser);
 
 const stream = new Sse();
 
 app.get("/stream", (request, response) => {
-  stream.init(request, response); //this is how you connect someone to the stream
+  console.log("db.messages test", db.messages);
+
+  const action = {
+    type: "ALL_MESSAGES",
+    payload: db.messages
+  };
+
+  stream.updateInit(action);
+  stream.init(request, response);
 });
 
 app.post("/message", (request, response) => {
@@ -24,8 +37,14 @@ app.post("/message", (request, response) => {
   db.messages.push(text);
 
   response.send(text);
-  stream.send(text); //send data over the stream here. Stream is always loading btw.
-  console.log("db text:", db);
+
+  const action = {
+    type: "NEW_MESSAGE",
+    payload: text
+  };
+
+  stream.send(action);
+  console.log("db test:", db);
 });
 
 app.listen(port, () => console.log(`Listening on :${port}`));
