@@ -7,15 +7,17 @@ const { Router } = express;
 const router = Router();
 
 router.post("/message", (request, response) => {
-  const { text } = request.body;
+  const { text, channel } = request.body;
 
-  db.messages.push(text);
+  const message = { text, channel };
 
-  response.send(text);
+  db.messages.push(message);
+
+  response.send(message);
 
   const action = {
     type: "NEW_MESSAGE",
-    payload: text
+    payload: message
   };
 
   stream.send(action);
